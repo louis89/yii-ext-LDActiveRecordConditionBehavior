@@ -64,7 +64,7 @@ class LDActiveRecordConditionBehavior extends CActiveRecordBehavior
 	 * @param array $columns The columns to generate a search criteria with. Defaults to Null meaning use the {@see LDActiveRecordConditionBehavior::$columns} property.
 	 * @param boolean $checkEmpty Whether to check if a value is empty or not before including it in the search criteria. If True and {@see LDActiveRecordConditionBehavior::isEmpty()} returns true, the value will not be included in the search criteria
 	 * @param boolean $trim Whether to trim the value when checking if it is empty. This parameter is only effective if $checkEmpty is set to true. {@see LDActiveRecordConditionBehavior::isEmpty()} for more details. 
-	 * @return CDbCriteria
+	 * @return CDbCriteria A copy of the CActiveRecord's current CDbCriteria with generated condition and parameters set
 	 */
 	public function getSearchCriteria($mergeCriteria = array(), $prefix = null, $operator = 'AND', $quoteTableName = true, $columns = null, $checkEmpty = true, $trim = true)
 	{
@@ -273,7 +273,7 @@ class LDActiveRecordConditionBehavior extends CActiveRecordBehavior
 		if(is_string($value) && preg_match('/^(?:\s*(<>|<=|>=|<|>|=))?(.*)$/', $value, $matches)) // Extract operation from value if the value is a string
 		{
 			$value = $matches[2];
-			$op = $matches[1];
+			$op = trim($matches[1]) === '' ? '=' : $matches[1]; // If op was only white space set to default equals
 		}
 		else // Default op is equal
 		{
