@@ -313,67 +313,67 @@ class LDActiveRecordConditionBehavior extends CActiveRecordBehavior
 	
 	public function advancedExists($conditions, $params = array())
 	{
-		return $this->getOwner()->exists($this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->exists($this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedFind($conditions, $params = array())
 	{
-		return $this->getOwner()->find($this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->find($this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedFindAll($conditions, $params = array())
 	{
-		return $this->getOwner()->findAll($this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->findAll($this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedFindAllByAttributes($attributes, $conditions, $params = array())
 	{
-		return $this->getOwner()->findAllByAttributes($attributes, $this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->findAllByAttributes($attributes, $this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedFindByPk($pk, $conditions, $params = array())
 	{
-		return $this->getOwner()->findByPk($pk, $this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->findByPk($pk, $this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedCount($conditions, $params = array())
 	{
-		return $this->getOwner()->count($this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->count($this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedCountByAttributes($attributes, $conditions, $params = array())
 	{
-		return $this->getOwner()->countByAttributes($attributes, $this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->countByAttributes($attributes, $this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedDeleteAll($conditions, $params = array())
 	{
-		return $this->getOwner()->deleteAll($this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->deleteAll($this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedDeleteAllByAttributes($attributes, $conditions, $params = array())
 	{
-		return $this->getOwner()->deleteAllByAttributes($attributes, $this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->deleteAllByAttributes($attributes, $this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedDeleteByPk($pk, $conditions, $params = array())
 	{
-		return $this->getOwner()->deleteByPk($pk, $this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->deleteByPk($pk, $this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedUpdateAll($attributes, $conditions, $params = array())
 	{
-		return $this->getOwner()->updateAll($attributes, $this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->updateAll($attributes, $this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedUpdateByPk($attributes, $conditions, $params = array())
 	{
-		return $this->getOwner()->updateByPk($attributes, $this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->updateByPk($attributes, $this->buildCondition($conditions, $params), $params);
 	}
 	
 	public function advancedUpdateCounters($counters, $conditions, $params = array())
 	{
-		return $this->getOwner()->updateCounters($counters, $this->processConditions($conditions, $params), $params);
+		return $this->getOwner()->updateCounters($counters, $this->buildCondition($conditions, $params), $params);
 	}
 	
 	/**
@@ -409,7 +409,7 @@ class LDActiveRecordConditionBehavior extends CActiveRecordBehavior
 					{
 						array_splice($value, 1, 0, array($column));
 					}
-					$value = $this->processConditions($value, $params);
+					$value = $this->buildCondition($value, $params);
 					if($value !== '')
 					{
 						$parts[] = '('.$value.')';
