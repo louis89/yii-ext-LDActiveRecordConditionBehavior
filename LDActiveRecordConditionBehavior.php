@@ -290,7 +290,7 @@ class LDActiveRecordConditionBehavior extends CActiveRecordBehavior
 		}
 		else
 		{
-			throw new CException($this->t('The parameter "$values" must be either a boolean or an array.'));
+			throw new CDbException($this->t('The parameter "$values" must be either a boolean or an array.'));
 		}
 		return $criteria;
 	}
@@ -310,6 +310,238 @@ class LDActiveRecordConditionBehavior extends CActiveRecordBehavior
 	{
 		return $value === null || $value === array() || $value === '' || $trim && is_scalar($value) && trim($value) === '';
 	}
+	
+	public function advancedExists($conditions, $params = array())
+	{
+		return $this->getOwner()->exists($this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedFind($conditions, $params = array())
+	{
+		return $this->getOwner()->find($this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedFindAll($conditions, $params = array())
+	{
+		return $this->getOwner()->findAll($this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedFindAllByAttributes($attributes, $conditions, $params = array())
+	{
+		return $this->getOwner()->findAllByAttributes($attributes, $this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedFindByPk($pk, $conditions, $params = array())
+	{
+		return $this->getOwner()->findByPk($pk, $this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedCount($conditions, $params = array())
+	{
+		return $this->getOwner()->count($this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedCountByAttributes($attributes, $conditions, $params = array())
+	{
+		return $this->getOwner()->countByAttributes($attributes, $this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedDeleteAll($conditions, $params = array())
+	{
+		return $this->getOwner()->deleteAll($this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedDeleteAllByAttributes($attributes, $conditions, $params = array())
+	{
+		return $this->getOwner()->deleteAllByAttributes($attributes, $this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedDeleteByPk($pk, $conditions, $params = array())
+	{
+		return $this->getOwner()->deleteByPk($pk, $this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedUpdateAll($attributes, $conditions, $params = array())
+	{
+		return $this->getOwner()->updateAll($attributes, $this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedUpdateByPk($attributes, $conditions, $params = array())
+	{
+		return $this->getOwner()->updateByPk($attributes, $this->processConditions($conditions, $params), $params);
+	}
+	
+	public function advancedUpdateCounters($counters, $conditions, $params = array())
+	{
+		return $this->getOwner()->updateCounters($counters, $this->processConditions($conditions, $params), $params);
+	}
+	
+	/**
+	 * Generates a condition string from an array of conditions in a manner similar to how CDbCommand generates conditions
+	 *
+	 * @param array $conditions An array of columns, condition operators, and values
+	 * @param array $params
+	 * @throws CDbException
+	 * @return string
+	 */
+	public function buildCondition($conditions, &$params)
+	{
+		if(!is_array($conditions)) // If not an array return the conditions
+		{
+			return $conditions;
+		}
+		if($conditions === array()) // If empty array return empty string
+		{
+			return '';
+		}
+	
+		$dbConnection = $this->getOwner()->getDbConnection();
+		$conds = (array)$conditions;
+		$operator = strtoupper(array_shift($conds)); // Operator for concatenating conditions should be the first element in conditions array
+		if($operator === 'OR' || $operator === 'AND') // If operator is 'OR' or 'AND'
+		{
+			$parts = array();
+			foreach($conds as $column => $value)
+			{
+				if(is_array($value)) // Multivalued column
+				{
+					if(is_string($column))
+					{
+						array_splice($value, 1, 0, array($column));
+					}
+					$value = $this->processConditions($value, $params);
+					if($value !== '')
+					{
+						$parts[] = '('.$value.')';
+					}
+				}
+				else if(is_string($column)) // Single column value
+				{
+					if(strpos($column, '(') === false) // If a function is not being applied to the column's value then prefix and quote the column name
+					{
+						if($dbConnection->tablePrefix !== null) // If the table name is known make sure it prefixes the column name
+						{
+							if(strpos($column, '.') === false) // no table name prefix specified so add it
+							{
+								$column = $dbConnection->tablePrefix.'.'.$column;
+							}
+							else if(strpos($column, '{{') !== false) // If the table name prefix is already specified as an alias then translate it to the actual table name prefix
+							{
+								$column = preg_replace('/\{\{(.*?)\}\}/', $dbConnection->tablePrefix.'$1', $column);
+							}
+						}
+						$column = $dbConnection->quoteColumnName($column);
+					}
+					if($value === null) // Null value
+					{
+						$parts[] = $column.' IS NULL';
+					}
+					else
+					{
+						if(is_string($value) && preg_match('/^(?:\s*(<>|<=|>=|<|>|=|\!=))(.*)$/', $value, $matches)) // If the value is a string determine the correct operation to be applied to this condition
+						{
+							$value = $matches[2];
+							$op = $matches[1];
+						}
+						else // No op specified so use default
+						{
+							$op = '=';
+						}
+						// Add condition
+						$paramName = self::getNextParameterName();
+						$parts[] = '('.$column.$op.$paramName.')';
+						$params[$paramName] = $value;
+					}
+				}
+				else // Invalid column name
+				{
+					throw new CDbException($this->t('Column name not specified.'));
+				}
+			}
+			// Return all condition parts imploded using the specified operator
+			return implode(' '.$operator.' ', $parts);
+		}
+	
+		$column = array_shift($conds);
+		if($column === null)
+		{
+			throw new CDbException($this->t('Column name not specified.'));
+		}
+		else
+		{
+			$column = (string)$column;
+		}
+	
+		if(strpos($column, '(') === false) // If a function is not being applied to the column then quote it
+		{
+			if($dbConnection->tablePrefix !== null) // If the table name is known make sure it prefixes the column name
+			{
+				if(strpos($column, '.') === false) // no table name prefix specified so add it
+				{
+					$column = $dbConnection->tablePrefix.'.'.$column;
+				}
+				else if(strpos($column, '{{') !== false) // If the table name prefix is already specified as an alias then translate it to the actual table name prefix
+				{
+					$column = preg_replace('/\{\{(.*?)\}\}/', $dbConnection->tablePrefix.'$1', $column);
+				}
+			}
+			$column = $dbConnection->quoteColumnName($column);
+		}
+	
+		$values = (array)array_shift($conds);
+	
+		if($operator === 'IN' || $operator === 'NOT IN') // IN or NOT IN
+		{
+			if($values === array())
+			{
+				return $operator === 'IN' ? '0=1' : ''; // If values is empty and IN return '0=1' otherwise if NOT IN return empty string
+			}
+			foreach($values as $i => $value)
+			{
+				$paramName = self::getNextParameterName();
+				$values[$i] = $paramName;
+				$params[$paramName] = $value;
+			}
+			return $column.' '.$operator.' ('.implode(', ', $values).')';
+		}
+	
+		// Partial Match operators
+		if($operator === 'LIKE' ||
+			$operator === 'NOT LIKE' ||
+			$operator === 'OR LIKE' ||
+			$operator === 'OR NOT LIKE' ||
+			$operator === 'REGEXP' ||
+			$operator === 'NOT REGEXP' ||
+			$operator === 'OR REGEXP' ||
+			$operator === 'OR NOT REGEXP')
+		{
+			if($values === array())
+			{
+				return $operator === 'LIKE' || $operator === 'OR LIKE' ? '0=1' : ''; // If values is empty and LIKE return '0=1' otherwise return empty string
+			}
+	
+			if(strpos($operator, 'OR ') === false) // If not using OR, use AND
+			{
+				$andor = ' AND ';
+			}
+			else // If using OR then use OR and remove it from the operator
+			{
+				$andor = ' OR ';
+				$operator = preg_replace('/^OR (.+)$/', '$1', $operator);
+			}
+			$expressions = array();
+			foreach($values as $value)
+			{
+				$paramName = self::getNextParameterName();
+				$expressions[] = '('.$column.' '.$operator.' '.$paramName.')';
+				$params[$paramName] = $value;
+			}
+			return '('.implode($andor, $expressions).')';
+		}
+	
+		throw new CDbException($this->t('Unknown operator "{operator}".', array('{operator}' => $operator)));
+	}
+	
 	
 	/**
 	 * Utility function that generates unique parameter names to be used to bind values in SQL criteria.
