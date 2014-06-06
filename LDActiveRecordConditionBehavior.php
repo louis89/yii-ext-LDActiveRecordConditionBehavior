@@ -30,7 +30,7 @@ class LDActiveRecordConditionBehavior extends CActiveRecordBehavior
 	/**
 	 * Set this property to configure which columns and how those columns should be part of generated condition criterias
 	 * Keys should be column names. Values should be arrays with two boolean values set "partialMatch" and "escape".
-	 * This property defaults to Null which will cause the confgiuration to be generated automatically when this behavior is attached to a CActiveRecord.
+	 * This property defaults to Null which will cause the configuration to be generated automatically when this behavior is attached to a CActiveRecord.
 	 * The default configuration includes all columns defined in the CActiveRecord's table schema with "partialMatch" set false and "escape" set true.
 	 * @var array configuration for generating column conditions
 	 */
@@ -213,7 +213,7 @@ class LDActiveRecordConditionBehavior extends CActiveRecordBehavior
 					$compositeKeys[] = $vals;
 				}
 			}
-			if(count($compositeKeys) === 1) // Single value compsite key condition
+			if(count($compositeKeys) === 1) // Single value composite key condition
 			{
 				$entries = array();
 				$params = array();
